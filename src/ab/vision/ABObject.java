@@ -13,55 +13,55 @@ import java.awt.Point;
 import java.awt.Rectangle;
 
 public class ABObject extends Rectangle {
- private static final long serialVersionUID = 1L;
- private static int counter = 0;
- public int id;
- //object type
- public ABType type;
- 
- public int area = 0;
- //For all MBRs, the shape is Rect by default.
- public ABShape shape = ABShape.Rect;
- 
-//For all MBRs, the angle is 0 by default.
- public double angle = 0;
- 
-//is Hollow or not
- public boolean hollow = false;
- 
- 
-public ABObject(Rectangle mbr, ABType type) {
-	super(mbr);
-	this.type = type;
-	this.id = counter++;
-}
-public ABObject(Rectangle mbr, ABType type, int id) {
-	super(mbr);
-	this.type = type;
-	this.id = id;
-}
-public ABObject(ABObject ab)
-{
-	super(ab.getBounds());
-	this.type = ab.type;
-	this.id = ab.id;
-}
-public ABObject()
-{
-	this.id = counter ++;
-	this.type = ABType.Unknown;
-}
-public ABType getType()
-{
-	return type;
-}
+	private static final long serialVersionUID = 1L;
+	private static int counter = 0;
+	public int id;
+	// object type
+	public ABType type;
 
-public Point getCenter() {
-   return new Point((int)getCenterX(), (int)getCenterY());
-}
+	public int area = 0;
+	// For all MBRs, the shape is Rect by default.
+	public ABShape shape = ABShape.Rect;
 
-public static void resetCounter() {
-	counter = 0;	
-}
+	// For all MBRs, the angle is 0 by default.
+	public double angle = 0;
+
+	// is Hollow or not
+	public boolean hollow = false;
+
+	public ABObject(Rectangle mbr, ABType type) {
+		super(mbr);
+		this.type = type;
+		this.id = counter++;
+	}
+
+	public ABObject(Rectangle mbr, ABType type, int id) {
+		super(mbr);
+		this.type = type;
+		this.id = id;
+	}
+
+	public ABObject(ABObject ab) {
+		super(ab.getBounds());
+		this.type = ab.type;
+		this.id = ab.id;
+	}
+
+	public ABObject() {
+		this.id = counter++;
+		this.type = ABType.Unknown;
+	}
+
+	public ABType getType() {
+		return type;
+	}
+
+	public Point getCenter() {
+		return new Point((int) getCenterX(), (int) getCenterY());
+	}
+
+	public static void resetCounter() {
+		counter = 0;
+	}
 
 }

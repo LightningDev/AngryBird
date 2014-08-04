@@ -5,8 +5,10 @@ import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -59,7 +61,6 @@ public class DemoAgent implements Runnable
 				{
 					openWebpage (new URL("http://chrome.angrybirds.com/"));
 					aRobot = new ActionRobot();
-					ActionRobot.GoFromMainMenuToLevelSelection();
 					gameOn = true;
 				}
 				break;
@@ -78,8 +79,8 @@ public class DemoAgent implements Runnable
 				break;
 			case "4":
 				System.out.print("Enter Level: ");
-				String[] level = br.readLine().split("-");
-				aRobot.loadLevel(Integer.parseInt(level[1]));
+				String level = br.readLine();
+				aRobot.loadLevel(Integer.parseInt(level));
 				break;
 			case "5":
 				// capture Image
@@ -92,41 +93,43 @@ public class DemoAgent implements Runnable
 				List<ABObject> objects = vision.findObjects();
 				List<ABObject> pigs = vision.findPigs();
 				List<ABObject> birds = vision.findBirds();
-				
+				List<ABObject> hills = vision.findHills();
+
+
 				// find the slingshot
 				Rectangle sling = vision.findSling();
 				
 				System.out.println("Number of pig: " + pigs.size());
 				System.out.println("Number of bird: " + birds.size());
 				System.out.println("Number of block: " + objects.size());
+				System.out.println("Number of hill: " + hills.size());
 				
-				/*for (int i = 0; i < objects.size(); i++)
+				if (hills.size() > 0)
 				{
-					ABObject temp = objects.get(i);
-					switch (objects.get(i).shape)
-					{
-					case Rect:
-						temp = (Rect) temp;
-						break;
-					case Poly:
-						temp = (Poly) temp;
-						break;
-					case Circle:
-						temp = (Circle) temp;
-						break;
-					case Triangle:
-						temp = (ABObject) temp;
-						break;
-					}
-					System.out.println("Object " + objects.get(i).id + " Position: " + temp.getBounds().x + "," + temp.getBounds().getMinY());
-				}*/
+					FileOutputStream fos= new FileOutputStream("src/Data",true);
+		            PrintWriter pw= new PrintWriter(fos);
+		            for (int j = 0; j < hills.size(); j++)
+		            {
+		            	pw.println("Hill " + j);
+						int[] x = ((Poly)hills.get(j)).polygon.xpoints;
+						int[] y = ((Poly)hills.get(j)).polygon.ypoints;
+						for (int i = 0; i < x.length; i++)
+						{
+							if (x[i] > 0 && y[i] >0)
+								pw.println("(" + x[i] + "," + y[i] + ")");
+						}
+		            }
+		            pw.close();
+				}
 				
 				long startTime = System.nanoTime();
 				RectangleAlgebra.TranslateToRA(objects);
 				RectangleAlgebra.ExtractContact();
+				RectangleAlgebra.ExtractDimentsion();
 				//RectangleAlgebra.PrintRA();
 				System.out.println();
 				//RectangleAlgebra.PrintCR();
+				RectangleAlgebra.PrintCD();
 				long stopTime = System.nanoTime();
 				System.out.println("RA finish in: " + (stopTime - startTime) * Math.pow(10, -9) + " seconds");
 				break;
@@ -154,7 +157,7 @@ public class DemoAgent implements Runnable
 	
 	public void openWebpage(URL url) {
 	    try 
-	    {
+	    { 
 	        openWebpage(url.toURI());
 	    } 
 	    catch (URISyntaxException e) 

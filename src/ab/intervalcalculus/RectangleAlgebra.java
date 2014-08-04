@@ -7,11 +7,12 @@
 package ab.intervalcalculus;
 
 import ab.vision.ABObject;
-import ab.vision.real.shape.Body;
+import ab.vision.real.shape.*;
 import ab.intervalcalculus.IntervalRelations.ERA;
 import ab.intervalcalculus.StabilityChecker.ContactDimension;
 import ab.intervalcalculus.StabilityChecker.ContactRelation;
 
+import java.awt.Polygon;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +33,9 @@ public class RectangleAlgebra
     
     // Contact Dimension (CD)
     private static HashMap<ABObject[], ContactDimension> CDDictionary;
+    
+    // Stability
+    //private static HashMap<ABObject, boolean> StabilityDictionary;
 
     /**
      * Iterate through the list and find the relation between each object
@@ -40,7 +44,6 @@ public class RectangleAlgebra
     public static HashMap<ABObject[], ERA[]> TranslateToRA(List<ABObject> listObject)
     {
     	RADictionary = new HashMap<ABObject[], ERA[]>();
-        
         //InitalizeHashMap(dictionary, listObject);
         for(int i = 0; i < listObject.size(); i++)
         {
@@ -84,6 +87,32 @@ public class RectangleAlgebra
     }
     
     /**
+     * Get the angular and regular polygon position
+     * @return List of points
+     */
+    private static double[] GetObjectPoints (ABObject ob)
+    {
+    	double[] points = new double[6];
+    	double angle = Math.toDegrees(ob.angle);
+    	if (angle == 0 || angle == 90 || angle == 270 || angle == 360)
+    	{
+    		points[0] = ob.getCenterX();
+    		points[1] = ob.getCenterY();
+    		points[2] = ob.getMinX();
+    		points[3] = ob.getMinY();
+    		points[4] = ob.getMaxX();
+    		points[5] = ob.getMaxY();
+    	}
+    	else
+    	{
+    		Polygon pol = ((Poly)ob).polygon;
+    		int[] x = pol.xpoints;
+    		int[] y = pol.ypoints;
+    	}
+    	return points;
+    }
+    
+    /**
      * Iterate the Relational Algebra to check contact relation
      * @return Hash map contains CR
      */ 
@@ -119,6 +148,10 @@ public class RectangleAlgebra
     	return contact;
     }
     
+    /**
+     * Check the dimension of contact between 2 objects
+     * @return: Contact Dimension
+     */
     public static HashMap<ABObject[], ContactDimension> ExtractDimentsion()
     {
     	CDDictionary = new HashMap<ABObject[], ContactDimension>();
@@ -141,6 +174,11 @@ public class RectangleAlgebra
     		}
     	}
     	return CDDictionary;
+    }
+    
+    public static void CheckStability ()
+    {
+    	
     }
     
     /**
@@ -249,6 +287,17 @@ public class RectangleAlgebra
     		int id1 = ab[0].id;
             int id2 = ab[1].id;
             ContactRelation contact = CRDictionary.get(ab);
+            System.out.println("CR(" + id1 + ", " + id2 + ")" + " = " + contact);
+    	}
+    }
+    
+    public static void PrintCD ()
+    {
+    	for (ABObject[] ab: CDDictionary.keySet())
+    	{
+    		int id1 = ab[0].id;
+            int id2 = ab[1].id;
+            ContactDimension contact = CDDictionary.get(ab);
             System.out.println("CR(" + id1 + ", " + id2 + ")" + " = " + contact);
     	}
     }
