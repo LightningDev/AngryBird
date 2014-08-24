@@ -6,6 +6,7 @@
 
 package ab.intervalcalculus;
 
+import ab.utils.ABUtil;
 import ab.vision.ABObject;
 import ab.vision.real.shape.*;
 import ab.intervalcalculus.IntervalRelations.ERA;
@@ -34,8 +35,9 @@ public class RectangleAlgebra
     // Contact Dimension (CD)
     private static HashMap<ABObject[], ContactDimension> CDDictionary;
     
-    // Stability
-    //private static HashMap<ABObject, boolean> StabilityDictionary;
+    // Stable Objects
+    private static HashMap<ABObject, Boolean> StabilityDictionary;
+
 
     /**
      * Iterate through the list and find the relation between each object
@@ -55,20 +57,22 @@ public class RectangleAlgebra
                     ABObject object2 = listObject.get(j);
                     
                     // Centre, start and end point of each coordinate of Object 1
-                    double object1_c_x = object1.getCenterX();
-                    double object1_c_y = object1.getCenterY();
-                    double object1_s_x = object1.getMinX();
-                    double object1_s_y = object1.getMinY();
-                    double object1_e_x = object1.getMaxX();
-                    double object1_e_y = object1.getMaxY();
+                    double[] points = GetObjectPoints(object1);
+                    double object1_c_x = points[0];
+                    double object1_c_y = points[1];
+                    double object1_s_x = points[2];
+                    double object1_s_y = points[3];
+                    double object1_e_x = points[4];
+                    double object1_e_y = points[5];
                     
                     // Centre, start and end point of each coordinate of Object 2
-                    double object2_c_x = object2.getCenterX();
-                    double object2_c_y = object2.getCenterY();
-                    double object2_s_x = object2.getMinX();
-                    double object2_s_y = object2.getMinY();
-                    double object2_e_x = object2.getMaxX();
-                    double object2_e_y = object2.getMaxY();
+                    points = GetObjectPoints(object2);
+                    double object2_c_x = points[0];
+                    double object2_c_y = points[1];
+                    double object2_s_x = points[2];
+                    double object2_s_y = points[3];
+                    double object2_e_x = points[4];
+                    double object2_e_y = points[5];
                     
                     // Check the relation between 2 rectangles
                     ERA rel1 = ERA.NULL;
@@ -90,25 +94,18 @@ public class RectangleAlgebra
      * Get the angular and regular polygon position
      * @return List of points
      */
-    private static double[] GetObjectPoints (ABObject ob)
+    public static double[] GetObjectPoints (ABObject ob)
     {
     	double[] points = new double[6];
     	double angle = Math.toDegrees(ob.angle);
-    	if (angle == 0 || angle == 90 || angle == 270 || angle == 360)
-    	{
-    		points[0] = ob.getCenterX();
-    		points[1] = ob.getCenterY();
-    		points[2] = ob.getMinX();
-    		points[3] = ob.getMinY();
-    		points[4] = ob.getMaxX();
-    		points[5] = ob.getMaxY();
-    	}
-    	else
-    	{
-    		Polygon pol = ((Poly)ob).polygon;
-    		int[] x = pol.xpoints;
-    		int[] y = pol.ypoints;
-    	}
+		points[0] = ob.getCenterX();
+		points[1] = ob.getCenterY();
+		
+		points[2] = ob.getMinX();
+		points[3] = ob.getMinY();
+		points[4] = ob.getMaxX();
+		points[5] = ob.getMaxY();
+    	
     	return points;
     }
     
@@ -125,6 +122,8 @@ public class RectangleAlgebra
     	    ABObject[] key = entry.getKey();
     	    ERA[] value = entry.getValue();
     	    ContactRelation contact = CheckContact(value);
+    	    if (ABUtil.isSupport(key[0], key[1]) || ABUtil.isSupport(key[1], key[0]))
+    	    	contact = ContactRelation.SURFACE_TO_SURFACE;
     	    CRDictionary.put(key, contact);
     	}
     	return CRDictionary;
@@ -176,9 +175,105 @@ public class RectangleAlgebra
     	return CDDictionary;
     }
     
-    public static void CheckStability ()
+    public static void CheckStability (List<ABObject> objects, List<ABObject> hills)
     {
+    	StabilityDictionary = new HashMap<ABObject, Boolean>();
     	
+    	// Find all object lies on the ground - Rule 1.1
+    	for (int i = 0; i < objects.size(); i++)
+    	{
+    		double angle = Math.toDegrees(objects.get(i).angle);
+    		if (angle == 0 || angle == 90 || angle == 180 || angle == 270 || angle == 360)
+    		{
+    			if (ABUtil.getSupporters(objects.get(i), objects).size() == 0 || CheckHill(hills, objects.get(i)))
+    			{
+    				System.out.println("Stand on the ground " + i);
+    				StabilityDictionary.put(objects.get(i), true);
+    			}
+    			else
+    			{
+    				StabilityDictionary.put(objects.get(i), false);
+    			}
+    		}
+    	}
+    	
+    	while (CheckAllStable())
+    	{
+    		// Regular Rectangle
+	    	for (Map.Entry<ABObject[], ContactDimension> entry : CDDictionary.entrySet())
+	    	{
+	    		ABObject[] key = entry.getKey();
+	    		ContactDimension contact = entry.getValue();
+	    		
+	    		// Rule 1.3
+	    		if (contact == ContactDimension.VERTICAL && StabilityDictionary.get(key[0]) && !StabilityDictionary.get(key[1]))
+	    		{
+	    			ABObject[] newKey = {key[1], key[0]};
+	    			ERA relation = GetRADictionary(newKey)[0];
+	    			if (StabilityRules.CheckRule(relation, 13))
+	    			{
+	    				StabilityDictionary.put(key[1], true);
+	    				System.out.println(key[1].id + " is stable by " + key[0].id);
+	    			}
+	    		}
+	    		
+	    		// Rule 1.2 and 1.4
+	    		for (Map.Entry<ABObject[], ContactDimension> _entry : CDDictionary.entrySet())
+	    		{
+	    			ABObject[] _key = _entry.getKey();
+	    			ContactDimension _contact = _entry.getValue();
+	    			if (key != _key)
+	    			{
+	    				// Rule 1.2
+	    				if (key[1] == _key[1] && contact == _contact && contact == ContactDimension.VERTICAL && StabilityDictionary.get(_key[0])
+	    						&& StabilityDictionary.get(key[0]) && !StabilityDictionary.get(_key[1])
+	    						&& !StabilityDictionary.get(key[1]))
+	    				{
+	    					ABObject[] newKey = {key[1], key[0]};
+	    	    			ERA relation = GetRADictionary(newKey)[0];
+	    	    			ABObject[] _newKey = {_key[1], _key[0]};
+	    	    			ERA _relation = GetRADictionary(_newKey)[0];
+	    	    			if (StabilityRules.CheckRule(relation, 121) && StabilityRules.CheckRule(_relation, 122))
+	    	    			{
+	    	    				StabilityDictionary.put(key[1], true);
+	    	    				System.out.println(key[1].id + " is stable by " + key[0].id + "," + _key[0].id);
+	    	    			}
+	    				}
+	    				
+	    				// Rule 1.4
+	    				if (key[0] == _key[0] && contact == _contact && contact == ContactDimension.HORIZONTAL && StabilityDictionary.get(key[1])
+	    						&& StabilityDictionary.get(_key[1]) && !StabilityDictionary.get(key[0])
+	    						&& !StabilityDictionary.get(_key[0]))
+	    				{
+	    					ERA relation = GetRADictionary(key)[0];
+	    					ERA _relation = GetRADictionary(_key)[0];
+	    					if ( (StabilityRules.CheckRule(relation, 141) && StabilityRules.CheckRule(_relation, 142))
+	    						|| (StabilityRules.CheckRule(relation, 143) && StabilityRules.CheckRule(_relation, 144)) )
+	    					{
+	    						StabilityDictionary.put(key[0], true);
+	    						System.out.println(key[0].id + " is stable by " + key[1].id + "," + _key[1].id);
+	    					}
+	    				}
+	    			}
+	    		}
+	    	}
+    	}
+    	
+    	// Angular Rectangle
+    	
+    }
+    
+    private static boolean CheckAllStable ()
+    {
+    	for (Map.Entry<ABObject, Boolean> _entry : StabilityDictionary.entrySet())
+    	{
+    		if (!_entry.getValue())
+    		{
+    			//System.out.println(_entry.getKey().id);
+    			return true;
+    		}
+    	}
+    	return false;
     }
     
     /**
@@ -215,43 +310,106 @@ public class RectangleAlgebra
         }
         
         // Relation OVERLAPS
-        else if(object1_start < object2_start && object2_start < object1_end && object1_end < object2_end)
+        else if(object1_start < object2_start && object1_centre >= object2_start && object1_end >= object2_centre && object1_end < object2_end)
         {
-            rel = ERA.OVERLAPS;
+        	rel = ERA.MOST_OVELAP_MOST;
         }
-        else if(object2_start < object1_start && object1_start < object2_end && object2_end < object1_end)
+        else if(object2_start < object1_start && object2_centre >= object1_start && object2_end >= object1_centre && object2_end < object1_end)
         {
-            rel = ERA.INVERSE_OVERLAPS;
+        	rel = ERA.INVERSE_MOST_OVERLAP_MOST;
+        }
+    	
+        else if(object1_start < object2_start && object1_centre >= object2_start && object1_end < object2_end)
+        {
+        	rel = ERA.MOST_OVERLAP_LESS;
+        }
+        else if(object2_start < object1_start && object2_centre >= object1_start && object2_end < object1_end)
+        {
+        	rel = ERA.INVERSE_MOST_OVERLAP_LESS;
+        }
+    	
+        else if(object1_centre < object2_start && object1_end >= object2_start && object1_end < object2_end)
+        {
+        	rel = ERA.LESS_OVERLAP_MOST;
+        }
+        else if(object2_centre < object1_start && object2_end >= object1_start && object2_end < object1_end)
+        {
+        	rel = ERA.INVERSE_LESS_OVERLAP_MOST;
+        }
+    	
+        else if(object1_centre < object2_start && object1_end > object2_start && object1_end < object2_centre)
+        {
+        	rel = ERA.LESS_OVERLAP_LESS;
+        }
+        else if(object2_centre < object1_start && object2_end > object1_start && object2_end < object1_centre)
+        {
+        	rel = ERA.INVERSE_LESS_OVERLAP_LESS;
         }
         
         // Relation STARTS
-        else if(object1_start == object2_start && object1_end < object2_end && object2_start < object1_end)
+        else if(object1_start == object2_start && object1_end >= object2_centre)
         {
-            rel = ERA.STARTS;
+        	rel = ERA.START_COVER_MOST;
         }
-        else if(object1_start == object2_start && object2_end < object1_end && object1_start < object2_end)
+        else if(object2_start == object1_start && object2_end >= object1_centre)
         {
-            rel = ERA.INVERSE_STARTS;
+        	rel = ERA.INVERSE_START_COVER_MOST;
+        }
+    	
+        else if(object1_start == object2_start && object1_end > object2_start && object1_end < object2_centre)
+        {
+        	rel = ERA.START_COVER_LESS;
+        }
+        else if(object2_start == object1_start && object2_end > object1_start && object2_end < object1_centre)
+        {
+        	rel = ERA.INVERSE_START_COVER_LESS;
         }
         
         // Relation DURING
-        else if(object1_start > object2_start && object1_end < object2_end && object1_start < object2_end && object1_end > object2_start)
+        else if(object1_start > object2_start && object1_end <= object2_centre)
         {
-            rel = ERA.DURING;
+        	rel = ERA.DURING_LEFT;
         }
-        else if(object2_start > object1_start && object2_end < object1_end && object2_start < object1_end && object2_end > object1_start)
+        else if(object2_start > object1_start && object2_end <= object1_centre)
         {
-            rel = ERA.INVERSE_DURING;
+        	rel = ERA.INVERSE_DURING_LEFT;
+        }
+    	
+        else if(object1_start > object2_start && object1_start < object2_centre && object1_end > object2_centre && object1_end < object2_end)
+        {
+        	rel = ERA.DURING_MIDPERPENDICULAR;
+        }
+        else if(object2_start > object1_start && object2_start < object1_centre && object2_end > object1_centre && object2_end < object1_end)
+        {
+        	rel = ERA.INVERSE_DURING_MIDPERPENDICULAR;
+        }
+    	
+        else if(object1_start >= object2_centre && object1_end < object2_end)
+        {
+        	rel = ERA.DURING_RIGHT;
+        }
+        else if(object2_start >= object1_centre && object2_end < object1_end)
+        {
+        	rel = ERA.INVERSE_DURING_RIGHT;
         }
         
         // Relation FINISHES
-        else if(object1_end == object2_end && object2_start < object1_start && object1_start < object2_end)
+        else if(object1_start > object2_start && object1_start <= object2_centre && object1_end == object2_end)
         {
-            rel = ERA.FINISHES;
+        	rel = ERA.FINISH_COVER_MOST;
         }
-        else if(object1_end == object2_end && object1_start < object2_start && object2_start < object1_end)
+    	else if(object2_start > object1_start && object2_start <= object1_centre && object2_end == object1_end)
         {
-            rel = ERA.INVERSE_FINISHES;
+        	rel = ERA.INVERSE_FINISH_COVER_MOST;
+        }
+    	
+    	else if(object1_start > object2_centre && object1_start < object2_end && object1_end == object2_end)
+        {
+        	rel = ERA.FINISH_COVER_LESS;
+        }
+    	else if(object2_start > object1_centre && object2_start < object1_end && object2_end == object1_end)
+        {
+        	rel = ERA.INVERSE_FINISH_COVER_LESS;
         }
         
         // Relation EQUAL
@@ -259,7 +417,54 @@ public class RectangleAlgebra
         {
             rel = ERA.EQUAL;
         }
+    	  	
         return rel;
+    }
+    
+    private static boolean CheckHill (List<ABObject> hills, ABObject ob)
+    {
+    	for (int i = 0; i < hills.size(); i++)
+    	{
+    		if (ABUtil.isSupport(ob, hills.get(i)))
+    		{
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+    
+    public static ERA[] GetRADictionary (ABObject[] objects)
+    {
+    	for (ABObject[] ab: RADictionary.keySet())
+    	{
+    		if(ab[0].id == objects[0].id && ab[1].id == objects[1].id)
+    			return RADictionary.get(ab);
+    	}
+    	return null;
+    }
+    
+    public static ContactRelation GetCRDictionary (ABObject[] objects)
+    {
+    	for (ABObject[] ab: CRDictionary.keySet())
+    	{
+    		if(ab[0] == objects[0] && ab[1] == objects[1])
+    		{
+    			return CRDictionary.get(ab);
+    		}
+    	}
+    	return null;
+    }
+    
+    public static ContactDimension GetCDDictionary (ABObject[] objects)
+    {
+    	for (ABObject[] ab: CDDictionary.keySet())
+    	{
+    		if(ab[0] == objects[0] && ab[1] == objects[1])
+    		{
+    			return CDDictionary.get(ab);
+    		}
+    	}
+    	return null;
     }
     
    /**
@@ -298,7 +503,7 @@ public class RectangleAlgebra
     		int id1 = ab[0].id;
             int id2 = ab[1].id;
             ContactDimension contact = CDDictionary.get(ab);
-            System.out.println("CR(" + id1 + ", " + id2 + ")" + " = " + contact);
+            System.out.println("CD(" + id1 + ", " + id2 + ")" + " = " + contact);
     	}
     }
 }

@@ -17,6 +17,7 @@ import java.util.List;
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 
+import ab.utils.ABUtil;
 import ab.vision.real.shape.*;
 import ab.demo.other.ActionRobot;
 import ab.intervalcalculus.RectangleAlgebra;
@@ -122,14 +123,18 @@ public class DemoAgent implements Runnable
 		            pw.close();
 				}
 				
+				System.out.println("First object: " + objects.get(0).id);
+				RectangleAlgebra.GetObjectPoints(objects.get(0));
+				
 				long startTime = System.nanoTime();
 				RectangleAlgebra.TranslateToRA(objects);
 				RectangleAlgebra.ExtractContact();
 				RectangleAlgebra.ExtractDimentsion();
-				//RectangleAlgebra.PrintRA();
+				RectangleAlgebra.PrintRA();
 				System.out.println();
+				//RectangleAlgebra.PrintCD();
 				//RectangleAlgebra.PrintCR();
-				RectangleAlgebra.PrintCD();
+				//RectangleAlgebra.CheckStability(objects, hills);				
 				long stopTime = System.nanoTime();
 				System.out.println("RA finish in: " + (stopTime - startTime) * Math.pow(10, -9) + " seconds");
 				break;
