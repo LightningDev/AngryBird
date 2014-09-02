@@ -130,11 +130,11 @@ public class DemoAgent implements Runnable
 				RectangleAlgebra.TranslateToRA(objects);
 				RectangleAlgebra.ExtractContact();
 				RectangleAlgebra.ExtractDimentsion();
-				RectangleAlgebra.PrintRA();
+				//RectangleAlgebra.PrintRA();
 				System.out.println();
 				//RectangleAlgebra.PrintCD();
 				//RectangleAlgebra.PrintCR();
-				//RectangleAlgebra.CheckStability(objects, hills);				
+				RectangleAlgebra.CheckStability(objects, hills);				
 				long stopTime = System.nanoTime();
 				System.out.println("RA finish in: " + (stopTime - startTime) * Math.pow(10, -9) + " seconds");
 				break;

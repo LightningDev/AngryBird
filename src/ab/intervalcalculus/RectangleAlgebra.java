@@ -8,13 +8,19 @@ package ab.intervalcalculus;
 
 import ab.utils.ABUtil;
 import ab.vision.ABObject;
+import ab.vision.ABShape;
+import ab.vision.ABType;
 import ab.vision.real.shape.*;
 import ab.intervalcalculus.IntervalRelations.ERA;
 import ab.intervalcalculus.StabilityChecker.ContactDimension;
 import ab.intervalcalculus.StabilityChecker.ContactRelation;
 
 import java.awt.Polygon;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +43,9 @@ public class RectangleAlgebra
     
     // Stable Objects
     private static HashMap<ABObject, Boolean> StabilityDictionary;
+    
+    // Error
+    private static double ERROR = 2.0;
 
 
     /**
@@ -74,6 +83,7 @@ public class RectangleAlgebra
                     double object2_e_x = points[4];
                     double object2_e_y = points[5];
                     
+                    
                     // Check the relation between 2 rectangles
                     ERA rel1 = ERA.NULL;
                     ERA rel2 = ERA.NULL;
@@ -99,8 +109,7 @@ public class RectangleAlgebra
     	double[] points = new double[6];
     	double angle = Math.toDegrees(ob.angle);
 		points[0] = ob.getCenterX();
-		points[1] = ob.getCenterY();
-		
+		points[1] = ob.getCenterY();		
 		points[2] = ob.getMinX();
 		points[3] = ob.getMinY();
 		points[4] = ob.getMaxX();
@@ -112,8 +121,9 @@ public class RectangleAlgebra
     /**
      * Iterate the Relational Algebra to check contact relation
      * @return Hash map contains CR
+     * @throws FileNotFoundException 
      */ 
-    public static HashMap<ABObject[], ContactRelation> ExtractContact()
+    public static HashMap<ABObject[], ContactRelation> ExtractContact() throws FileNotFoundException
     {
     	CRDictionary = new HashMap<ABObject[], ContactRelation>();
     	for (Map.Entry<ABObject[], ERA[]> entry : RADictionary.entrySet()) 
@@ -124,6 +134,9 @@ public class RectangleAlgebra
     	    ContactRelation contact = CheckContact(value);
     	    if (ABUtil.isSupport(key[0], key[1]) || ABUtil.isSupport(key[1], key[0]))
     	    	contact = ContactRelation.SURFACE_TO_SURFACE;
+    	    if ( (key[0].IsAngular() || key[1].IsAngular()) && (value[0] != ERA.TAKES_PLACE_BEFORE && value[0] != ERA.INVERSE_TAKES_PLACE_BEFORE
+        			&& value[1] != ERA.TAKES_PLACE_BEFORE && value[1] != ERA.INVERSE_TAKES_PLACE_BEFORE) )
+    	    	contact = CheckContactAngular(key[0], key[1]);
     	    CRDictionary.put(key, contact);
     	}
     	return CRDictionary;
@@ -145,6 +158,209 @@ public class RectangleAlgebra
     		contact = ContactRelation.SURFACE_TO_SURFACE;
     	}
     	return contact;
+    }
+    
+    private static ContactRelation CheckContactAngular(ABObject obs1, ABObject obs2) throws FileNotFoundException
+    {
+		if (obs1.shape != ABShape.Circle && obs2.shape != ABShape.Circle)
+		{
+	    	Rect ob1 = (Rect)obs1;
+	    	Rect ob2 = (Rect)obs2;	    	
+	    	int[] ob1_x = null;
+	    	int[] ob2_x = null;
+	    	int[] ob1_y = null;
+	    	int[] ob2_y = null;
+	    	if (ob1.IsAngular() && ob2.IsAngular())
+	    	{
+	    		ob1_x = ob1.p.xpoints;
+		    	ob2_x = ob2.p.xpoints;
+		    	ob1_y = ob1.p.ypoints;
+		    	ob2_y = ob2.p.ypoints;
+	    	}
+	    	else if (ob1.IsAngular() && !ob2.IsAngular())
+	    	{
+	    		ob1_x = ob1.p.xpoints;
+	    		ob1_y = ob1.p.ypoints;
+		    	ob2_x = ob2.GetBoundX();
+		    	ob2_y = ob2.GetBoundY();
+	    	}
+	    	else if (!ob1.IsAngular() && ob2.IsAngular())
+	    	{
+	    		ob1_x = ob1.GetBoundX();
+	    		ob1_y = ob1.GetBoundY();
+		    	ob2_x = ob2.p.xpoints;
+		    	ob2_y = ob2.p.ypoints;
+	    	}
+	    	List<double[]> ob1LineEquations = new ArrayList<double[]>();
+	    	List<double[]> ob2LineEquations = new ArrayList<double[]>();
+	    	
+
+			
+	    	// Check corner-corner contact
+	    	// Check corner-surface contact
+	    	AddLineEquations(ob1_x, ob1_y, ob1LineEquations);
+	    	AddLineEquations(ob2_x, ob2_y, ob2LineEquations);
+	    	/*FileOutputStream fos= new FileOutputStream("src/Lines",true);
+            PrintWriter pw= new PrintWriter(fos);
+            pw.println(obs1.id + " " + obs2.id);
+            pw.println(Arrays.toString(ob1_x));
+            pw.println(Arrays.toString(ob1_y));
+            pw.println(Arrays.toString(ob2_x));
+            pw.println(Arrays.toString(ob2_y));
+            for (int i = 0; i < ob1LineEquations.size(); i++)
+            {
+            	pw.print(ob1LineEquations.get(i)[0] + " " + ob1LineEquations.get(i)[1] + " " + ob1LineEquations.get(i)[2] + " ");
+            }
+            pw.println();
+            for (int i = 0; i < ob2LineEquations.size(); i++)
+            {
+            	pw.print(ob2LineEquations.get(i)[0] + " " + ob2LineEquations.get(i)[1] + " " + ob2LineEquations.get(i)[2] + " ");
+            }
+
+            pw.println();
+            pw.close();*/
+            ContactRelation cr1 = CheckLineEquations(ob2_x, ob2_y, ob1LineEquations) ;
+            ContactRelation cr2 = CheckLineEquations(ob1_x, ob1_y, ob2LineEquations);
+            if (cr1 != ContactRelation.NULL)
+            	return cr1;
+            if (cr2 != ContactRelation.NULL)
+            	return cr2;
+
+	    	int size = 0;
+	    	if (ob1_x.length > ob2_x.length)
+	    		size = ob1_x.length;
+	    	else
+	    		size = ob2_x.length;
+	    	for (int i = 0; i < size; i++)
+	    	{
+	    		if (i < ob1_x.length)
+	    		{
+	    			if ( Arrays.asList(ob2_x).contains(ob1_x[i]) && Arrays.asList(ob2_y).contains(ob1_y[i]) )
+	    				return ContactRelation.POINT_TO_POINT;
+	    		}
+	    		if (i < ob2_x.length)
+	    		{
+	    			if ( Arrays.asList(ob1_x).contains(ob2_x[i]) && Arrays.asList(ob1_y).contains(ob2_y[i]) )
+	    				return ContactRelation.POINT_TO_POINT;
+	    		}
+	    	}
+	    	
+		}
+    	else
+    		return ContactRelation.SURFACE_TO_SURFACE;
+    	return ContactRelation.NULL;
+    }
+    
+    private static double[] LineEquation (int x1, int y1, int x2, int y2)
+    {
+    	double[] arr = new double[7];
+    	// Cramer's Rule to solve system of equation ( 2 x 2 )
+    	if (x1 - x2 != 0)
+    	{
+    		// y = ax + b
+	    	arr[0] = (y1 - y2) / (x1 - x2);
+	    	arr[1] = (x1*y2 - y1*x2) / (x1 - x2);
+	    	arr[2] = 0;
+    	}
+    	else
+    	{
+    		// line equation based on x = ya + b
+    		arr[0] = 0;
+    		arr[1] = x1;
+    		arr[2] = 1;
+    	}
+    	if (x1 <= x2)
+    	{
+    		arr[3] = x1;
+    		arr[5] = x2;
+    	}
+    	else if (x1 >= x2)
+    	{
+    		arr[3] = x2;
+    		arr[5] = x1;
+    	}
+    	
+    	if (y1 <= y2)
+    	{
+    		arr[4] = y1;
+    		arr[6] = y2;
+    	}
+    	else if (y1 >= y2)
+    	{
+    		arr[4] = y2;
+    		arr[6] = y1;
+    	}
+     	return arr;
+    }
+    
+    private static void AddLineEquations (int[] x, int[] y, List<double[]> list)
+    {
+    	int lines = 0;
+    	while(true)
+    	{
+    		int x1 = x[lines];
+    		int y1 = y[lines];
+    		if (lines != x.length-1)
+    		{
+    			int x2 = x[lines+1];
+	    		int y2 = y[lines+1];
+	    		list.add(LineEquation(x1, y1, x2, y2));
+    		}
+    		else
+    		{
+    			int x2 = x[0];
+    			int y2 = y[0];
+    			
+    			list.add(LineEquation(x1, y1, x2, y2));
+    			break;
+    		} 		
+    		lines++;
+    	}
+    }
+    
+    private static ContactRelation CheckLineEquations (int[] x, int[] y, List<double[]> lineList)
+    {
+    	for (int i = 0; i < lineList.size(); i++)
+        {
+        	 double a = lineList.get(i)[0];
+        	 double b = lineList.get(i)[1];
+        	 double type = lineList.get(i)[2];
+        	 for (int j = 0; j < x.length; j++)
+        	 {
+        		 int tempX = x[j];
+        		 int tempY = y[j];
+        		 if (type == 0)
+        		 {
+        			 double ax = a * tempX;
+        			 double result = ax + b;
+        			 if (result >= tempY - ERROR && result <= tempY + ERROR)
+        			 {
+        				if (tempX >= lineList.get(i)[3] - ERROR && tempX <= lineList.get(i)[5] +ERROR
+        						 && tempY >= lineList.get(i)[4] -ERROR && tempY <= lineList.get(i)[6] + ERROR)
+        				{
+        					//System.out.println(" at " + tempX + ", " + tempY + " on " + "y = " + a + "x + " + b);
+         					return ContactRelation.POINT_TO_SURFACE;
+        				}
+        			 }
+    						
+        		 }
+        		 else
+        		 {
+        			 double ay = a * tempY;
+        			 double result = ay + b;            			 
+        			 if (result >= tempX - ERROR && result <= tempX + ERROR)
+        			 {   
+        				 if (tempX >= lineList.get(i)[3] - ERROR && tempX <= lineList.get(i)[5] + ERROR
+        						 && tempY >= lineList.get(i)[4] - ERROR && tempY <= lineList.get(i)[6] + ERROR)
+        				{        
+        					 //System.out.println(" at " + tempX + ", " + tempY + " on " + "x = " + a + "y + " + b);
+        					 return ContactRelation.POINT_TO_SURFACE;
+        				}
+        			 }
+        		 }
+        	 }
+        }
+    	return ContactRelation.NULL;
     }
     
     /**
@@ -195,16 +411,31 @@ public class RectangleAlgebra
     				StabilityDictionary.put(objects.get(i), false);
     			}
     		}
+			else
+			{
+				StabilityDictionary.put(objects.get(i), false);
+			}
     	}
     	
-    	while (CheckAllStable())
+    	int count = 0;
+    	while (CheckAllStable(count))
     	{
+    		int index = 0;
+    		for (Map.Entry<ABObject, Boolean> _entry : StabilityDictionary.entrySet())
+        	{
+        		if (_entry.getValue())
+        		{
+        			index++;
+        		}
+        	}
+    		count = index;
+    		System.out.println(count);
+    		
     		// Regular Rectangle
 	    	for (Map.Entry<ABObject[], ContactDimension> entry : CDDictionary.entrySet())
 	    	{
 	    		ABObject[] key = entry.getKey();
 	    		ContactDimension contact = entry.getValue();
-	    		
 	    		// Rule 1.3
 	    		if (contact == ContactDimension.VERTICAL && StabilityDictionary.get(key[0]) && !StabilityDictionary.get(key[1]))
 	    		{
@@ -254,6 +485,22 @@ public class RectangleAlgebra
 	    						System.out.println(key[0].id + " is stable by " + key[1].id + "," + _key[1].id);
 	    					}
 	    				}
+	    				
+	    				// Rule 1.8
+	    				if (key[1] == _key[1] && contact == _contact && contact == ContactDimension.VERTICAL && StabilityDictionary.get(_key[0])
+	    						&& StabilityDictionary.get(key[0]) && !StabilityDictionary.get(_key[1]) )
+	    				{
+	    					ABObject[] newKey = {key[1], key[0]};
+	    	    			ERA relation = GetRADictionary(newKey)[0];
+	    	    			ABObject[] _newKey = {_key[1], _key[0]};
+	    	    			ERA _relation = GetRADictionary(_newKey)[0];
+	    	    			if (StabilityRules.CheckRule(relation, 181) && StabilityRules.CheckRule(_relation, 182))
+	    	    			{
+	    	    				StabilityDictionary.put(key[1], true);
+	    	    				System.out.println(key[1].id + " is stable by " + key[0].id + "," + _key[0].id);
+	    	    			}
+
+	    				}
 	    			}
 	    		}
 	    	}
@@ -263,8 +510,18 @@ public class RectangleAlgebra
     	
     }
     
-    private static boolean CheckAllStable ()
+    private static boolean CheckAllStable (int count)
     {
+    	int index = 0;
+		for (Map.Entry<ABObject, Boolean> _entry : StabilityDictionary.entrySet())
+    	{
+    		if (_entry.getValue())
+    		{
+    			index++;
+    		}
+    	}
+		if (count == index)
+			return false;
     	for (Map.Entry<ABObject, Boolean> _entry : StabilityDictionary.entrySet())
     	{
     		if (!_entry.getValue())
@@ -492,7 +749,8 @@ public class RectangleAlgebra
     		int id1 = ab[0].id;
             int id2 = ab[1].id;
             ContactRelation contact = CRDictionary.get(ab);
-            System.out.println("CR(" + id1 + ", " + id2 + ")" + " = " + contact);
+            if (contact != ContactRelation.NULL)
+            	System.out.println("CR(" + id1 + ", " + id2 + ")" + " = " + contact);
     	}
     }
     

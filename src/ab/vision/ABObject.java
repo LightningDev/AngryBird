@@ -56,6 +56,25 @@ public class ABObject extends Rectangle {
 		return type;
 	}
 
+	public boolean IsAngular()
+	{
+		double degree = Math.toDegrees(this.angle);
+		if ( (degree <= 85 && degree >= 5)  || (degree <= 175 && degree >=95) 
+				|| (degree <= 265 && degree >= 185) || (degree <= 355 && degree >= 275))
+			return true;
+		return false;
+	}
+	
+	public int[] GetBoundX()
+	{
+		return new int[] {(int) this.getMinX(), (int) this.getMinX(), (int) this.getMaxX(), (int) this.getMaxX()};
+	}
+	
+	public int[] GetBoundY()
+	{
+		return new int[] {(int) this.getMinY(), (int) this.getMaxY(), (int) this.getMaxY(), (int) this.getMinY()};
+	}
+	
 	public Point getCenter() {
 		return new Point((int) getCenterX(), (int) getCenterY());
 	}

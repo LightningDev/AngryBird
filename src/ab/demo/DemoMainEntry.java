@@ -16,8 +16,4 @@ public class DemoMainEntry
 		da.Run();
 	}
 	
-	public class GUIControl extends JFrame
-	{
-		setTitle ("Angry Bird Control");
-	}
 }
