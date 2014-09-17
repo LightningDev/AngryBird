@@ -42,7 +42,7 @@ public class RectangleAlgebra
     private static HashMap<ABObject[], ContactDimension> CDDictionary;
     
     // Stable Objects
-    private static HashMap<ABObject, Boolean> StabilityDictionary;
+    public static HashMap<ABObject, Boolean> StabilityDictionary;
     
     // Error
     private static double ERROR = 2.0;
@@ -65,39 +65,51 @@ public class RectangleAlgebra
                 {
                     ABObject object2 = listObject.get(j);
                     
-                    // Centre, start and end point of each coordinate of Object 1
-                    double[] points = GetObjectPoints(object1);
-                    double object1_c_x = points[0];
-                    double object1_c_y = points[1];
-                    double object1_s_x = points[2];
-                    double object1_s_y = points[3];
-                    double object1_e_x = points[4];
-                    double object1_e_y = points[5];
-                    
-                    // Centre, start and end point of each coordinate of Object 2
-                    points = GetObjectPoints(object2);
-                    double object2_c_x = points[0];
-                    double object2_c_y = points[1];
-                    double object2_s_x = points[2];
-                    double object2_s_y = points[3];
-                    double object2_e_x = points[4];
-                    double object2_e_y = points[5];
-                    
-                    
-                    // Check the relation between 2 rectangles
-                    ERA rel1 = ERA.NULL;
-                    ERA rel2 = ERA.NULL;
-                    
-                    // Set Relation (native java run)
-                    rel1 = GetRA (object1_s_x, object2_s_x, object1_c_x, object2_c_x, object1_e_x, object2_e_x);
-                    rel2 = GetRA (object1_s_y, object2_s_y, object1_c_y, object2_c_y, object1_e_y, object2_e_y);               
+                    ERA[] rels = GetERA(object1, object2);
                     
                     // Set relation for RA(object1, object 2)
-                    RADictionary.put(new ABObject[]{object1,object2}, new ERA[]{rel1,rel2});               
+                    RADictionary.put(new ABObject[]{object1,object2}, rels);               
                 }
             }
         }
         return RADictionary;
+    }
+    
+    /**
+     * Get Relatio between 2 objects
+     * @param o1
+     * @param o2
+     * @return
+     */
+    public static ERA[] GetERA (ABObject o1, ABObject o2)
+    {
+    	// Centre, start and end point of each coordinate of Object 1
+        double[] points = GetObjectPoints(o1);
+        double object1_c_x = points[0];
+        double object1_c_y = points[1];
+        double object1_s_x = points[2];
+        double object1_s_y = points[3];
+        double object1_e_x = points[4];
+        double object1_e_y = points[5];
+        
+        // Centre, start and end point of each coordinate of Object 2
+        points = GetObjectPoints(o2);
+        double object2_c_x = points[0];
+        double object2_c_y = points[1];
+        double object2_s_x = points[2];
+        double object2_s_y = points[3];
+        double object2_e_x = points[4];
+        double object2_e_y = points[5];
+        
+        // Check the relation between 2 rectangles
+        ERA rel1 = ERA.NULL;
+        ERA rel2 = ERA.NULL;
+        
+        // Set Relation (native java run)
+        rel1 = GetRA (object1_s_x, object2_s_x, object1_c_x, object2_c_x, object1_e_x, object2_e_x);
+        rel2 = GetRA (object1_s_y, object2_s_y, object1_c_y, object2_c_y, object1_e_y, object2_e_y);
+        
+        return new ERA[] {rel1, rel2};
     }
     
     /**
@@ -251,7 +263,7 @@ public class RectangleAlgebra
     	return ContactRelation.NULL;
     }
     
-    private static double[] LineEquation (int x1, int y1, int x2, int y2)
+    public static double[] LineEquation (int x1, int y1, int x2, int y2)
     {
     	double[] arr = new double[7];
     	// Cramer's Rule to solve system of equation ( 2 x 2 )
@@ -318,7 +330,7 @@ public class RectangleAlgebra
     	}
     }
     
-    private static ContactRelation CheckLineEquations (int[] x, int[] y, List<double[]> lineList)
+    public static ContactRelation CheckLineEquations (int[] x, int[] y, List<double[]> lineList)
     {
     	for (int i = 0; i < lineList.size(); i++)
         {
@@ -403,7 +415,7 @@ public class RectangleAlgebra
     		{
     			if (ABUtil.getSupporters(objects.get(i), objects).size() == 0 || CheckHill(hills, objects.get(i)))
     			{
-    				System.out.println("Stand on the ground " + i);
+    				//System.out.println("Stand on the ground " + objects.get(i).id);
     				StabilityDictionary.put(objects.get(i), true);
     			}
     			else
@@ -429,7 +441,6 @@ public class RectangleAlgebra
         		}
         	}
     		count = index;
-    		System.out.println(count);
     		
     		// Regular Rectangle
 	    	for (Map.Entry<ABObject[], ContactDimension> entry : CDDictionary.entrySet())
@@ -444,7 +455,7 @@ public class RectangleAlgebra
 	    			if (StabilityRules.CheckRule(relation, 13))
 	    			{
 	    				StabilityDictionary.put(key[1], true);
-	    				System.out.println(key[1].id + " is stable by " + key[0].id);
+	    				//System.out.println(key[1].id + " is stable by " + key[0].id);
 	    			}
 	    		}
 	    		
@@ -467,7 +478,7 @@ public class RectangleAlgebra
 	    	    			if (StabilityRules.CheckRule(relation, 121) && StabilityRules.CheckRule(_relation, 122))
 	    	    			{
 	    	    				StabilityDictionary.put(key[1], true);
-	    	    				System.out.println(key[1].id + " is stable by " + key[0].id + "," + _key[0].id);
+	    	    				//System.out.println(key[1].id + " is stable by " + key[0].id + "," + _key[0].id);
 	    	    			}
 	    				}
 	    				
@@ -482,7 +493,7 @@ public class RectangleAlgebra
 	    						|| (StabilityRules.CheckRule(relation, 143) && StabilityRules.CheckRule(_relation, 144)) )
 	    					{
 	    						StabilityDictionary.put(key[0], true);
-	    						System.out.println(key[0].id + " is stable by " + key[1].id + "," + _key[1].id);
+	    						//System.out.println(key[0].id + " is stable by " + key[1].id + "," + _key[1].id);
 	    					}
 	    				}
 	    				
@@ -497,7 +508,7 @@ public class RectangleAlgebra
 	    	    			if (StabilityRules.CheckRule(relation, 181) && StabilityRules.CheckRule(_relation, 182))
 	    	    			{
 	    	    				StabilityDictionary.put(key[1], true);
-	    	    				System.out.println(key[1].id + " is stable by " + key[0].id + "," + _key[0].id);
+	    	    				//System.out.println(key[1].id + " is stable by " + key[0].id + "," + _key[0].id);
 	    	    			}
 
 	    				}

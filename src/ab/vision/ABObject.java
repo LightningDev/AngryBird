@@ -16,6 +16,7 @@ public class ABObject extends Rectangle {
 	private static final long serialVersionUID = 1L;
 	private static int counter = 0;
 	public int id;
+	public int depth = 0;
 	// object type
 	public ABType type;
 
