@@ -12,6 +12,7 @@ import javax.swing.text.StyledEditorKit.UnderlineAction;
 
 import org.ini4j.jdk14.edu.emory.mathcs.backport.java.util.Arrays;
 
+import ab.demo.other.Shot;
 import ab.intervalcalculus.IntervalRelations.ERA;
 import ab.utils.ABUtil;
 import ab.vision.ABObject;
@@ -146,6 +147,14 @@ public class Evaluation
 		}
 		
 		return null;
+	}
+	
+	public static List<ABObject> ShelterFunction(ABObject target, Vision vision, Point releasePoint)
+	{
+		List<ABObject> shelters = new ArrayList<ABObject>();
+		Point centerPoint = target.getCenter();
+		shelters = ABUtil.Reachable(vision, centerPoint, releasePoint);
+		return shelters;
 	}
 	
 	public static List<ABObject> GetClosestObjects (List<ABObject> objectList, boolean left)
@@ -324,6 +333,7 @@ public class Evaluation
 	{
 		// List of affected object
 		List<ABObject> affectedList = new ArrayList<ABObject>();
+		affectedList.add(obs);
 		
 		// Regular Rectangle
 		double ratio = obs.height / obs.width;
@@ -333,8 +343,7 @@ public class Evaluation
 		{
 			// Falling
 			if (ratio >= HIT_RATIO_THRESHOLD)
-			{
-				affectedList.add(obs);
+			{		
 				List<ABObject> temp =  ABUtil.getSupportees(obs, objects, 1);
 				List<ABObject> temp1 = ABUtil.getAllSupportees(temp, objects);
 				affectedList.addAll(temp);

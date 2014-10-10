@@ -119,7 +119,6 @@ public class RectangleAlgebra
     public static double[] GetObjectPoints (ABObject ob)
     {
     	double[] points = new double[6];
-    	double angle = Math.toDegrees(ob.angle);
 		points[0] = ob.getCenterX();
 		points[1] = ob.getCenterY();		
 		points[2] = ob.getMinX();
@@ -144,9 +143,9 @@ public class RectangleAlgebra
     	    ABObject[] key = entry.getKey();
     	    ERA[] value = entry.getValue();
     	    ContactRelation contact = CheckContact(value);
-    	    if (ABUtil.isSupport(key[0], key[1]) || ABUtil.isSupport(key[1], key[0]))
+    	    if ((ABUtil.isSupport(key[0], key[1]) || ABUtil.isSupport(key[1], key[0])) && !key[0].IsAngular() && !key[1].IsAngular())
     	    	contact = ContactRelation.SURFACE_TO_SURFACE;
-    	    if ( (key[0].IsAngular() || key[1].IsAngular()) && (value[0] != ERA.TAKES_PLACE_BEFORE && value[0] != ERA.INVERSE_TAKES_PLACE_BEFORE
+    	    else if ( (key[0].IsAngular() || key[1].IsAngular()) && (value[0] != ERA.TAKES_PLACE_BEFORE && value[0] != ERA.INVERSE_TAKES_PLACE_BEFORE
         			&& value[1] != ERA.TAKES_PLACE_BEFORE && value[1] != ERA.INVERSE_TAKES_PLACE_BEFORE) )
     	    	contact = CheckContactAngular(key[0], key[1]);
     	    CRDictionary.put(key, contact);
@@ -172,7 +171,7 @@ public class RectangleAlgebra
     	return contact;
     }
     
-    private static ContactRelation CheckContactAngular(ABObject obs1, ABObject obs2) throws FileNotFoundException
+    private static ContactRelation CheckContactAngular(ABObject obs1, ABObject obs2)
     {
 		if (obs1.shape != ABShape.Circle && obs2.shape != ABShape.Circle)
 		{
@@ -212,25 +211,7 @@ public class RectangleAlgebra
 	    	// Check corner-surface contact
 	    	AddLineEquations(ob1_x, ob1_y, ob1LineEquations);
 	    	AddLineEquations(ob2_x, ob2_y, ob2LineEquations);
-	    	/*FileOutputStream fos= new FileOutputStream("src/Lines",true);
-            PrintWriter pw= new PrintWriter(fos);
-            pw.println(obs1.id + " " + obs2.id);
-            pw.println(Arrays.toString(ob1_x));
-            pw.println(Arrays.toString(ob1_y));
-            pw.println(Arrays.toString(ob2_x));
-            pw.println(Arrays.toString(ob2_y));
-            for (int i = 0; i < ob1LineEquations.size(); i++)
-            {
-            	pw.print(ob1LineEquations.get(i)[0] + " " + ob1LineEquations.get(i)[1] + " " + ob1LineEquations.get(i)[2] + " ");
-            }
-            pw.println();
-            for (int i = 0; i < ob2LineEquations.size(); i++)
-            {
-            	pw.print(ob2LineEquations.get(i)[0] + " " + ob2LineEquations.get(i)[1] + " " + ob2LineEquations.get(i)[2] + " ");
-            }
-
-            pw.println();
-            pw.close();*/
+	    	
             ContactRelation cr1 = CheckLineEquations(ob2_x, ob2_y, ob1LineEquations) ;
             ContactRelation cr2 = CheckLineEquations(ob1_x, ob1_y, ob2LineEquations);
             if (cr1 != ContactRelation.NULL)
@@ -263,6 +244,21 @@ public class RectangleAlgebra
     	return ContactRelation.NULL;
     }
     
+    /**
+     * Get the line equation
+     * @param x1
+     * @param y1
+     * @param x2
+     * @param y2
+     * @return Equations
+     * [0] = a
+     * [1] = b
+     * [2] = (x1 - x2 == 0) ? 1 : 0
+     * [3] : x1
+     * [4] : y1
+     * [5] : x2
+     * [6] : y2
+     */
     public static double[] LineEquation (int x1, int y1, int x2, int y2)
     {
     	double[] arr = new double[7];
@@ -270,42 +266,52 @@ public class RectangleAlgebra
     	if (x1 - x2 != 0)
     	{
     		// y = ax + b
-	    	arr[0] = (y1 - y2) / (x1 - x2);
-	    	arr[1] = (x1*y2 - y1*x2) / (x1 - x2);
+	    	arr[0] = (double)(y1 - y2) / (double)(x1 - x2);
+	    	arr[1] = (double)(x1*y2 - y1*x2) / (double)(x1 - x2);
 	    	arr[2] = 0;
     	}
     	else
     	{
-    		// line equation based on x = ya + b
+    		// line equation based on x = ay + b
     		arr[0] = 0;
     		arr[1] = x1;
     		arr[2] = 1;
     	}
-    	if (x1 <= x2)
+    	if (x1 < x2)
     	{
     		arr[3] = x1;
     		arr[5] = x2;
-    	}
-    	else if (x1 >= x2)
-    	{
-    		arr[3] = x2;
-    		arr[5] = x1;
-    	}
-    	
-    	if (y1 <= y2)
-    	{
     		arr[4] = y1;
     		arr[6] = y2;
     	}
-    	else if (y1 >= y2)
+    	else if (x1 > x2)
     	{
+    		arr[3] = x2;
+    		arr[5] = x1;
     		arr[4] = y2;
     		arr[6] = y1;
+    	}
+    	else if (x1 == x2)
+    	{
+    		if (y1 < y2)
+    		{
+    			arr[3] = x1;
+        		arr[5] = x2;
+        		arr[4] = y1;
+        		arr[6] = y2;
+    		}
+    		else
+    		{
+    			arr[3] = x2;
+        		arr[5] = x1;
+        		arr[4] = y2;
+        		arr[6] = y1;
+    		}
     	}
      	return arr;
     }
     
-    private static void AddLineEquations (int[] x, int[] y, List<double[]> list)
+    public static void AddLineEquations (int[] x, int[] y, List<double[]> list)
     {
     	int lines = 0;
     	while(true)

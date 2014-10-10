@@ -19,6 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import javax.lang.model.element.QualifiedNameable;
+
 import org.ini4j.InvalidFileFormatException;
 import org.ini4j.Wini;
 import org.ini4j.jdk14.edu.emory.mathcs.backport.java.util.Arrays;
@@ -27,6 +29,7 @@ import ab.planner.TrajectoryPlanner;
 import ab.planner.abTrajectory;
 import ab.utils.ABUtil;
 import ab.vision.real.shape.*;
+import ab.QualitativePhysics.QualitativeRep;
 import ab.demo.other.ActionRobot;
 import ab.demo.other.Shot;
 import ab.intervalcalculus.Evaluation;
@@ -36,6 +39,7 @@ import ab.vision.ABShape;
 import ab.vision.ABType;
 import ab.vision.ShowSeg;
 import ab.vision.Vision;
+import ab.vision.VisionMBR;
 import ab.vision.GameStateExtractor.GameState;
 import ab.vision.VisionRealShape;
 
@@ -65,7 +69,8 @@ public class DemoAgent implements Runnable
 		System.out.println("2. Action Robot");
 		System.out.println("3. Visualization");
 		System.out.println("4. Load Level");
-		System.out.println("5. Translate relational algebra and stability checker");
+		System.out.println("5. Testing solve function");
+		System.out.println("6. Testing Evaluation");
 		System.out.print("Enter action: ");		
 		String s = "";		
 		while ( (s = br.readLine()) != null)
@@ -99,11 +104,126 @@ public class DemoAgent implements Runnable
 				aRobot.loadLevel(Integer.parseInt(level));
 				break;
 			case "5":
-				Solve ();
+				//PhysicsSolve();
+				//Solve ();
+				System.out.print("Enter id 1: ");
+				String id1 = br.readLine();
+				System.out.print("Enter id 2: ");
+				String id2 = br.readLine();
+				TestPhysicsSolve(Integer.parseInt(id1), Integer.parseInt(id2));
+				break;
+			case "6":
+				System.out.print("Enter id: ");
+				String id = br.readLine();
+				_Solve(Integer.parseInt(id));
+				break;
 			}
 			System.out.print("Enter action: ");
 		}
 		
+	}
+	
+	public void TestPhysicsSolve (int id1, int id2)
+	{
+		// capture Image
+		BufferedImage screenshot = ActionRobot.doScreenShot();
+
+		// process image
+		VisionRealShape vision = new VisionRealShape(screenshot);
+
+		// get all object
+		List<ABObject> objects = vision.findObjects();
+		List<ABObject> pigs = vision.findPigs();
+		List<ABObject> birds = vision.findBirds();
+		List<ABObject> hills = vision.findHills();
+
+		for (int i = 0; i < objects.size(); i++)
+		{
+			if (objects.get(i).id == id1)
+			{
+				ABObject o1 = objects.get(i);
+				for (int j = 0; j < objects.size(); j++)
+				{
+					if (objects.get(j).id == id2)
+					{
+						ABObject o2 = objects.get(j);
+						if (QualitativeRep.TouchRelation(o1, o2))
+						{
+							System.out.println("touch (" + o1.id + ", " + o2.id + ")");
+							System.out.println("touch (" + o1.type + ", " + o2.type + ")");
+							Point ps = QualitativeRep.LeftPoint(o1, o2);
+							int x = ps.x;
+							int y = ps.y;
+							System.out.println("left_p (" + o1.id + ", " + o2.id + ")" + " = " 
+							+ "(" + x + ", " + y + ")");
+							ps = QualitativeRep.RightPoint(o1, o2);
+							x = ps.x;
+							y = ps.y;
+							System.out.println("right_p (" + o1.id + ", " + o2.id + ")" + " = " 
+							+ "(" + x + ", " + y + ")");
+							ps = QualitativeRep.CenterPoint(o1, o2);
+							x = ps.x;
+							y = ps.y;
+							System.out.println("center_p (" + o1.id + ", " + o2.id + ")" + " = " 
+							+ "(" + x + ", " + y + ")");
+						}
+						else
+						{
+							System.out.println("!touch (" + o1.id + ", " + o2.id + ")");
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	public void PhysicsSolve ()
+	{
+		// capture Image
+		BufferedImage screenshot = ActionRobot.doScreenShot();
+
+		// process image
+		VisionRealShape vision = new VisionRealShape(screenshot);
+
+		// get all object
+		List<ABObject> objects = vision.findObjects();
+		List<ABObject> pigs = vision.findPigs();
+		List<ABObject> birds = vision.findBirds();
+		List<ABObject> hills = vision.findHills();
+
+		for (int i = 0; i < objects.size(); i++)
+		{
+			ABObject o1 = objects.get(i);
+			for (int j = 0; j < objects.size(); j++)
+			{
+				ABObject o2 = objects.get(j);
+				if (QualitativeRep.TouchRelation(o1, o2))
+				{
+					System.out.println("touch (" + o1.id + ", " + o2.id + ")");
+					System.out.println("touch (" + o1.type + ", " + o2.type + ")");
+				}
+			}
+			
+			for (int j = 0; j < pigs.size(); j++)
+			{
+				ABObject o2 = pigs.get(j);
+				if (QualitativeRep.TouchRelation(o1, o2))
+				{
+					System.out.println("touch (" + o1.id + ", " + o2.id + ")");
+					System.out.println("touch (" + o1.type + ", " + o2.type + ")");
+				}
+			}
+			
+			for (int j = 0; j < hills.size(); j++)
+			{
+				ABObject o2 = hills.get(j);
+				if (QualitativeRep.TouchRelation(o1, o2))
+				{
+					System.out.println("touch (" + o1.id + ", " + o2.id + ")");
+					System.out.println("touch (" + o1.type + ", " + o2.type + ")");
+				}
+			}
+		}
 	}
 	
 	public void Solve ()
@@ -124,11 +244,23 @@ public class DemoAgent implements Runnable
 		// find the slingshot
 		Rectangle sling = vision.findSling();
 		
+		// confirm the slingshot
+		while (sling == null && aRobot.getState() == GameState.PLAYING) {
+			System.out
+			.println("No slingshot detected. Please remove pop up or zoom out");
+			ActionRobot.fullyZoomOut();
+			screenshot = ActionRobot.doScreenShot();
+			vision = new VisionRealShape(screenshot);
+			sling = vision.findSling();
+		}
+		
 		System.out.println("Number of pig: " + pigs.size());
 		System.out.println("Number of bird: " + birds.size());
 		System.out.println("Number of block: " + objects.size());
 		System.out.println("Number of hill: " + hills.size());
 		
+		// Game State
+		GameState state = aRobot.getState();
 		
 		if (sling != null)
 		{
@@ -161,11 +293,14 @@ public class DemoAgent implements Runnable
 					ABObject x = objects.get(i);
 					System.out.println("Evaluate object " + x.id);
 					Point tpt = x.getCenter();
-					TrajectoryPlanner tp = new TrajectoryPlanner();
+					//TrajectoryPlanner tp = new TrajectoryPlanner();
 					
 					// estimate the trajectory
 					ArrayList<Point> pts = tp.estimateLaunchPoint(sling, tpt);
-					releasePoint = pts.get(0);
+					if (pts.size() > 0)
+						releasePoint = pts.get(0);
+					else
+						break;
 					
 					// Get the reference point
 					Point refPoint = tp.getReferencePoint(sling);
@@ -233,6 +368,99 @@ public class DemoAgent implements Runnable
 					}
 				
 				aRobot.cshoot(shot);
+			}
+		}
+	}
+	
+	public void _Solve (int id)
+	{
+		// capture Image
+		BufferedImage screenshot = ActionRobot.doScreenShot();
+		
+		// process image
+		Vision vision = new Vision(screenshot);
+		
+		// get all object
+		List<ABObject> objects = vision.findBlocksRealShape();
+		List<ABObject> pigs = vision.findPigsRealShape();
+		List<ABObject> birds = vision.findBirdsRealShape();
+		List<ABObject> hills = vision.findHills();
+		
+		
+		// find the slingshot
+		Rectangle sling = vision.findSlingshotMBR();
+		
+		// confirm the slingshot
+		while (sling == null && aRobot.getState() == GameState.PLAYING) {
+			System.out
+			.println("No slingshot detected. Please remove pop up or zoom out");
+			ActionRobot.fullyZoomOut();
+			screenshot = ActionRobot.doScreenShot();
+			vision = new Vision(screenshot);
+			sling = vision.findSlingshotMBR();
+		}
+		
+		System.out.println("Number of pig: " + pigs.size());
+		System.out.println("Number of bird: " + birds.size());
+		System.out.println("Number of block: " + objects.size());
+		System.out.println("Number of hill: " + hills.size());
+		
+		// Game State
+		GameState state = aRobot.getState();
+		
+		if (sling != null)
+		{
+			if (!pigs.isEmpty())
+			{
+				Point releasePoint = null;
+				Shot shot = new Shot();
+				int dx, dy;
+				double max = Double.MIN_VALUE;
+				ABObject best = null;
+				
+				for (int i = 0; i < pigs.size(); i++)
+				{
+					best = pigs.get(i);
+					if (pigs.get(i).id == id)
+					{
+						best = pigs.get(i);
+						break;
+					}
+				}
+				
+				// estimate the trajectory
+				ArrayList<Point> pts = tp.estimateLaunchPoint(sling, best.getCenter());
+				releasePoint = pts.get(0);
+				
+				// Get the reference point
+				Point refPoint = tp.getReferencePoint(sling);
+				
+				
+				List<Point> points = tp.predictTrajectory(sling, releasePoint);
+				List<ABObject> result = new ArrayList<ABObject>();
+				Point target = best.getCenter();
+				for (Point point : points) {
+					if (point.x < 840 && point.y < 480 && point.y > 100
+							&& point.x > 400)
+						for (ABObject ab : objects) {
+							if (((ab.contains(point) && !ab.contains(target)) || Math
+									.abs(vision.getMBRVision()._scene[point.y][point.x] - 72) < 10)
+									&& point.x < target.x)
+								{
+								if(!result.contains(ab))
+									result.add(ab);
+								}
+						}
+
+				}
+				for (int i = 0; i < result.size(); i++)
+				{
+					ABObject ab = result.get(i);
+					System.out.println("Sheltering structure is: " + ab.id);
+					System.out.println("Type: " + ab.type);
+					System.out.println("Position: " + ab.getLocation());
+				}
+				
 			}
 		}
 	}

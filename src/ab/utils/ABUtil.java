@@ -257,5 +257,24 @@ public class ABUtil {
 		}
 		return result;
 	}
+	
+	// Return List of ABObject on a trajectory way
+	public static List<ABObject> Reachable(Vision vision, Point target, Point releasePoint) {
+		List<ABObject> result = new ArrayList<ABObject>();
+		List<Point> points = tp.predictTrajectory(vision.findSlingshotMBR(),
+				releasePoint);
+		for (Point point : points) {
+			if (point.x < 840 && point.y < 480 && point.y > 100
+					&& point.x > 400)
+				for (ABObject ab : vision.findBlocksMBR()) {
+					if (((ab.contains(point) && !ab.contains(target)) || Math
+							.abs(vision.getMBRVision()._scene[point.y][point.x] - 72) < 10)
+							&& point.x < target.x)
+						result.add(ab);
+				}
+
+		}
+		return result;
+	}
 
 }

@@ -163,6 +163,9 @@ public class NaiveAgent implements Runnable {
 					}
 
 					prevTarget = new Point(_tpt.x, _tpt.y);
+					
+					// Pick the best object
+					
 
 					// estimate the trajectory
 					ArrayList<Point> pts = tp.estimateLaunchPoint(sling, _tpt);
