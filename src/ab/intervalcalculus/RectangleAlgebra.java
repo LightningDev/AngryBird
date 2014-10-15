@@ -9,16 +9,14 @@ package ab.intervalcalculus;
 import ab.utils.ABUtil;
 import ab.vision.ABObject;
 import ab.vision.ABShape;
-import ab.vision.ABType;
 import ab.vision.real.shape.*;
+import ab.QualitativePhysics.LineEquation;
+import ab.QualitativePhysics.MathFunctions;
 import ab.intervalcalculus.IntervalRelations.ERA;
 import ab.intervalcalculus.StabilityChecker.ContactDimension;
 import ab.intervalcalculus.StabilityChecker.ContactRelation;
 
-import java.awt.Polygon;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -134,7 +132,7 @@ public class RectangleAlgebra
      * @return Hash map contains CR
      * @throws FileNotFoundException 
      */ 
-    public static HashMap<ABObject[], ContactRelation> ExtractContact() throws FileNotFoundException
+    public static HashMap<ABObject[], ContactRelation> ExtractContact() 
     {
     	CRDictionary = new HashMap<ABObject[], ContactRelation>();
     	for (Map.Entry<ABObject[], ERA[]> entry : RADictionary.entrySet()) 
@@ -181,6 +179,8 @@ public class RectangleAlgebra
 	    	int[] ob2_x = null;
 	    	int[] ob1_y = null;
 	    	int[] ob2_y = null;
+	    	List<Point> points1 = new ArrayList<Point>();
+	    	List<Point> points2 = new ArrayList<Point>();
 	    	if (ob1.IsAngular() && ob2.IsAngular())
 	    	{
 	    		ob1_x = ob1.p.xpoints;
@@ -202,15 +202,19 @@ public class RectangleAlgebra
 		    	ob2_x = ob2.p.xpoints;
 		    	ob2_y = ob2.p.ypoints;
 	    	}
-	    	List<double[]> ob1LineEquations = new ArrayList<double[]>();
-	    	List<double[]> ob2LineEquations = new ArrayList<double[]>();
 	    	
-
-			
-	    	// Check corner-corner contact
-	    	// Check corner-surface contact
-	    	AddLineEquations(ob1_x, ob1_y, ob1LineEquations);
-	    	AddLineEquations(ob2_x, ob2_y, ob2LineEquations);
+	    	for (int i = 0; i < ob1_x.length; i++)
+	    	{
+	    		points1.add(new Point(ob1_x[i], ob1_y[i]));
+	    	}
+	    	
+	    	for (int i = 0; i < ob2_x.length; i++)
+	    	{
+	    		points2.add(new Point(ob2_x[i], ob2_y[i]));
+	    	}
+	    	
+	    	List<LineEquation> ob1LineEquations = MathFunctions.objectLineEquations(points1);
+	    	List<LineEquation> ob2LineEquations = MathFunctions.objectLineEquations(points2);
 	    	
             ContactRelation cr1 = CheckLineEquations(ob2_x, ob2_y, ob1LineEquations) ;
             ContactRelation cr2 = CheckLineEquations(ob1_x, ob1_y, ob2LineEquations);
@@ -244,117 +248,26 @@ public class RectangleAlgebra
     	return ContactRelation.NULL;
     }
     
-    /**
-     * Get the line equation
-     * @param x1
-     * @param y1
-     * @param x2
-     * @param y2
-     * @return Equations
-     * [0] = a
-     * [1] = b
-     * [2] = (x1 - x2 == 0) ? 1 : 0
-     * [3] : x1
-     * [4] : y1
-     * [5] : x2
-     * [6] : y2
-     */
-    public static double[] LineEquation (int x1, int y1, int x2, int y2)
-    {
-    	double[] arr = new double[7];
-    	// Cramer's Rule to solve system of equation ( 2 x 2 )
-    	if (x1 - x2 != 0)
-    	{
-    		// y = ax + b
-	    	arr[0] = (double)(y1 - y2) / (double)(x1 - x2);
-	    	arr[1] = (double)(x1*y2 - y1*x2) / (double)(x1 - x2);
-	    	arr[2] = 0;
-    	}
-    	else
-    	{
-    		// line equation based on x = ay + b
-    		arr[0] = 0;
-    		arr[1] = x1;
-    		arr[2] = 1;
-    	}
-    	if (x1 < x2)
-    	{
-    		arr[3] = x1;
-    		arr[5] = x2;
-    		arr[4] = y1;
-    		arr[6] = y2;
-    	}
-    	else if (x1 > x2)
-    	{
-    		arr[3] = x2;
-    		arr[5] = x1;
-    		arr[4] = y2;
-    		arr[6] = y1;
-    	}
-    	else if (x1 == x2)
-    	{
-    		if (y1 < y2)
-    		{
-    			arr[3] = x1;
-        		arr[5] = x2;
-        		arr[4] = y1;
-        		arr[6] = y2;
-    		}
-    		else
-    		{
-    			arr[3] = x2;
-        		arr[5] = x1;
-        		arr[4] = y2;
-        		arr[6] = y1;
-    		}
-    	}
-     	return arr;
-    }
-    
-    public static void AddLineEquations (int[] x, int[] y, List<double[]> list)
-    {
-    	int lines = 0;
-    	while(true)
-    	{
-    		int x1 = x[lines];
-    		int y1 = y[lines];
-    		if (lines != x.length-1)
-    		{
-    			int x2 = x[lines+1];
-	    		int y2 = y[lines+1];
-	    		list.add(LineEquation(x1, y1, x2, y2));
-    		}
-    		else
-    		{
-    			int x2 = x[0];
-    			int y2 = y[0];
-    			
-    			list.add(LineEquation(x1, y1, x2, y2));
-    			break;
-    		} 		
-    		lines++;
-    	}
-    }
-    
-    public static ContactRelation CheckLineEquations (int[] x, int[] y, List<double[]> lineList)
+   
+    public static ContactRelation CheckLineEquations (int[] x, int[] y, List<LineEquation> lineList)
     {
     	for (int i = 0; i < lineList.size(); i++)
         {
-        	 double a = lineList.get(i)[0];
-        	 double b = lineList.get(i)[1];
-        	 double type = lineList.get(i)[2];
+        	 double a = lineList.get(i).getA();
+        	 double b = lineList.get(i).getB();
+        	 boolean type = lineList.get(i).isX();
         	 for (int j = 0; j < x.length; j++)
         	 {
         		 int tempX = x[j];
         		 int tempY = y[j];
-        		 if (type == 0)
+        		 if (!type)
         		 {
         			 double ax = a * tempX;
         			 double result = ax + b;
         			 if (result >= tempY - ERROR && result <= tempY + ERROR)
         			 {
-        				if (tempX >= lineList.get(i)[3] - ERROR && tempX <= lineList.get(i)[5] +ERROR
-        						 && tempY >= lineList.get(i)[4] -ERROR && tempY <= lineList.get(i)[6] + ERROR)
+        				if (tempX >= lineList.get(i).getStart().x - ERROR && tempX <= lineList.get(i).getEnd().x +ERROR
+        						 && tempY >= lineList.get(i).getStart().y -ERROR && tempY <= lineList.get(i).getEnd().y + ERROR)
         				{
         					//System.out.println(" at " + tempX + ", " + tempY + " on " + "y = " + a + "x + " + b);
          					return ContactRelation.POINT_TO_SURFACE;
@@ -368,8 +281,8 @@ public class RectangleAlgebra
         			 double result = ay + b;            			 
         			 if (result >= tempX - ERROR && result <= tempX + ERROR)
         			 {   
-        				 if (tempX >= lineList.get(i)[3] - ERROR && tempX <= lineList.get(i)[5] + ERROR
-        						 && tempY >= lineList.get(i)[4] - ERROR && tempY <= lineList.get(i)[6] + ERROR)
+        				 if (tempX >= lineList.get(i).getStart().x - ERROR && tempX <= lineList.get(i).getEnd().x + ERROR
+        						 && tempY >= lineList.get(i).getStart().y - ERROR && tempY <= lineList.get(i).getEnd().y + ERROR)
         				{        
         					 //System.out.println(" at " + tempX + ", " + tempY + " on " + "x = " + a + "y + " + b);
         					 return ContactRelation.POINT_TO_SURFACE;

@@ -125,56 +125,56 @@ public class DemoAgent implements Runnable
 	
 	public void TestPhysicsSolve (int id1, int id2)
 	{
-		// capture Image
-		BufferedImage screenshot = ActionRobot.doScreenShot();
-
-		// process image
-		VisionRealShape vision = new VisionRealShape(screenshot);
-
-		// get all object
-		List<ABObject> objects = vision.findObjects();
-		List<ABObject> pigs = vision.findPigs();
-		List<ABObject> birds = vision.findBirds();
-		List<ABObject> hills = vision.findHills();
-
-		for (int i = 0; i < objects.size(); i++)
-		{
-			if (objects.get(i).id == id1)
-			{
-				ABObject o1 = objects.get(i);
-				for (int j = 0; j < objects.size(); j++)
-				{
-					if (objects.get(j).id == id2)
-					{
-						ABObject o2 = objects.get(j);
-						if (QualitativeRep.TouchRelation(o1, o2))
-						{
-							System.out.println("touch (" + o1.id + ", " + o2.id + ")");
-							System.out.println("touch (" + o1.type + ", " + o2.type + ")");
-							Point ps = QualitativeRep.LeftPoint(o1, o2);
-							int x = ps.x;
-							int y = ps.y;
-							System.out.println("left_p (" + o1.id + ", " + o2.id + ")" + " = " 
-							+ "(" + x + ", " + y + ")");
-							ps = QualitativeRep.RightPoint(o1, o2);
-							x = ps.x;
-							y = ps.y;
-							System.out.println("right_p (" + o1.id + ", " + o2.id + ")" + " = " 
-							+ "(" + x + ", " + y + ")");
-							ps = QualitativeRep.CenterPoint(o1, o2);
-							x = ps.x;
-							y = ps.y;
-							System.out.println("center_p (" + o1.id + ", " + o2.id + ")" + " = " 
-							+ "(" + x + ", " + y + ")");
-						}
-						else
-						{
-							System.out.println("!touch (" + o1.id + ", " + o2.id + ")");
-						}
-					}
-				}
-			}
-		}
+//		// capture Image
+//		BufferedImage screenshot = ActionRobot.doScreenShot();
+//
+//		// process image
+//		VisionRealShape vision = new VisionRealShape(screenshot);
+//
+//		// get all object
+//		List<ABObject> objects = vision.findObjects();
+//		List<ABObject> pigs = vision.findPigs();
+//		List<ABObject> birds = vision.findBirds();
+//		List<ABObject> hills = vision.findHills();
+//
+//		for (int i = 0; i < objects.size(); i++)
+//		{
+//			if (objects.get(i).id == id1)
+//			{
+//				ABObject o1 = objects.get(i);
+//				for (int j = 0; j < objects.size(); j++)
+//				{
+//					if (objects.get(j).id == id2)
+//					{
+//						ABObject o2 = objects.get(j);
+//						if (QualitativeRep.TouchRelation(o1, o2))
+//						{
+//							System.out.println("touch (" + o1.id + ", " + o2.id + ")");
+//							System.out.println("touch (" + o1.type + ", " + o2.type + ")");
+//							Point ps = QualitativeRep.LeftPoint(o1, o2);
+//							int x = ps.x;
+//							int y = ps.y;
+//							System.out.println("left_p (" + o1.id + ", " + o2.id + ")" + " = " 
+//							+ "(" + x + ", " + y + ")");
+//							ps = QualitativeRep.RightPoint(o1, o2);
+//							x = ps.x;
+//							y = ps.y;
+//							System.out.println("right_p (" + o1.id + ", " + o2.id + ")" + " = " 
+//							+ "(" + x + ", " + y + ")");
+//							ps = QualitativeRep.CenterPoint(o1, o2);
+//							x = ps.x;
+//							y = ps.y;
+//							System.out.println("center_p (" + o1.id + ", " + o2.id + ")" + " = " 
+//							+ "(" + x + ", " + y + ")");
+//						}
+//						else
+//						{
+//							System.out.println("!touch (" + o1.id + ", " + o2.id + ")");
+//						}
+//					}
+//				}
+//			}
+//		}
 	}
 	
 	public void PhysicsSolve ()

@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import ab.QualitativePhysics.LineEquation;
+import ab.QualitativePhysics.MathFunctions;
 import ab.demo.other.Shot;
 import ab.intervalcalculus.IntervalRelations.ERA;
 import ab.intervalcalculus.StabilityChecker.ContactRelation;
@@ -81,8 +83,8 @@ public class ABUtil {
 			// Get Line equation of lower edge
 			// and check if any points of the other rectangle
 			// are contact with this line, if yes add to list
-			double[] lines = RectangleAlgebra.LineEquation(x, maxY, secondX, secondY);
-			List<double[]> lineList = new ArrayList<double[]>(); 
+			LineEquation lines = MathFunctions.lineEqCompute(x, maxY, secondX, secondY);
+			List<LineEquation> lineList = new ArrayList<LineEquation>(); 
 			lineList.add(lines);
 			ContactRelation cr = RectangleAlgebra.CheckLineEquations(rect1.p.xpoints,rect1.p.ypoints, lineList);
 			if (cr != ContactRelation.NULL)

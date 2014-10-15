@@ -14,6 +14,7 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.List;
 
+import ab.QualitativePhysics.MathFunctions;
 import ab.intervalcalculus.RectangleAlgebra;
 import ab.vision.real.shape.Poly;
 import ab.vision.real.shape.Rect;
@@ -24,6 +25,7 @@ public class ABObject extends Rectangle {
 	public int id;
 	public int depth = 0;
 	public boolean isReachable;
+	private double sheltersValue = 0;
 	// object type
 	public ABType type;
 
@@ -59,6 +61,14 @@ public class ABObject extends Rectangle {
 		this.id = counter++;
 		this.type = ABType.Unknown;
 	}
+	
+	public double getSheltersValue() {
+		return sheltersValue;
+	}
+
+	public void setSheltersValue(double sheltersValue) {
+		this.sheltersValue = sheltersValue;
+	}
 
 	public ABType getType() {
 		return type;
@@ -71,108 +81,6 @@ public class ABObject extends Rectangle {
 				|| (degree <= 355 && degree >= 275))
 			return true;
 		return false;
-	}
-
-	public List<Point> GetPoints() {
-		List<Point> points = new ArrayList<Point>();
-		if (this.IsAngular()) {
-			if (this.shape == ABShape.Rect && this.type != ABType.Pig) {
-				Rect ob = (Rect) this;
-				int[] x = ob.p.xpoints;
-				int[] y = ob.p.ypoints;
-				for (int i = 0; i < x.length; i++) {
-					if (x[i] != 0 && y[i] != 0) {
-						Point point = new Point(x[i], y[i]);
-						points.add(point);
-					}
-				}
-			} else if (this.shape == ABShape.Rect && this.type == ABType.Pig) {
-				points.add(new Point((int) this.getMinX(), (int) this.getMinY()));
-				points.add(new Point((int) this.getMaxX(), (int) this.getMinY()));
-				points.add(new Point((int) this.getMaxX(), (int) this.getMaxY()));
-				points.add(new Point((int) this.getMinX(), (int) this.getMaxY()));
-			} else if (this.shape == ABShape.Circle) {
-				points.add(new Point((int) this.getMinX(), (int) this.getMinY()));
-				points.add(new Point((int) this.getMaxX(), (int) this.getMinY()));
-				points.add(new Point((int) this.getMaxX(), (int) this.getMaxY()));
-				points.add(new Point((int) this.getMinX(), (int) this.getMaxY()));
-			} else if (this.shape == ABShape.Triangle
-					|| this.shape == ABShape.Poly) {
-				Poly ob = (Poly) this;
-				int[] x = ob.polygon.xpoints;
-				int[] y = ob.polygon.ypoints;
-				for (int i = 0; i < x.length; i++) {
-					Point point = new Point(x[i], y[i]);
-					points.add(point);
-				}
-			}
-		} else {
-			if (this.shape != ABShape.Poly && this.shape != ABShape.Triangle) {
-				points.add(new Point((int) this.getMinX(), (int) this.getMinY()));
-				points.add(new Point((int) this.getMaxX(), (int) this.getMinY()));
-				points.add(new Point((int) this.getMaxX(), (int) this.getMaxY()));
-				points.add(new Point((int) this.getMinX(), (int) this.getMaxY()));
-			} else {
-				Poly ob = (Poly) this;
-				int[] x = ob.polygon.xpoints;
-				int[] y = ob.polygon.ypoints;
-				for (int i = 0; i < x.length; i++) {
-					if (x[i] != 0 && y[i] != 0) {
-						Point point = new Point(x[i], y[i]);
-						points.add(point);
-					}
-				}
-			}
-		}
-		return points;
-	}
-
-	public List<Point> GetAllPoints() {
-		List<Point> points = GetPoints();
-		int[] xs = new int[points.size()];
-		int[] ys = new int[points.size()];
-		for (int i = 0; i < points.size(); i++) {
-			xs[i] = points.get(i).x;
-			ys[i] = points.get(i).y;
-		}
-
-		// Find line equations based on objects's points
-		List<double[]> lines = new ArrayList<double[]>();
-		RectangleAlgebra.AddLineEquations(xs, ys, lines);
-
-		// Find all points bound the object
-		List<Point> ps = new ArrayList<Point>();
-		for (int i = 0; i < lines.size(); i++) {
-			double[] equation = lines.get(i);
-			// x = ay + b
-			if (equation[2] == 1) {
-				double y1 = equation[4];
-				double y2 = equation[6];
-				if (equation[4] > equation[6]) {
-					y1 = equation[6];
-					y2 = equation[4];
-				}
-				double x = equation[3];
-				for (double j = y1; j <= y2; j++) {
-					Point point = new Point((int) x, (int) j);
-					ps.add(point);
-				}
-			}
-			// y = ax + b
-			else {
-				double x1 = equation[3];
-				double x2 = equation[5];
-				double a = equation[0];
-				double b = equation[1];
-				for (double j = x1; j <= x2; j++) {
-					double y = a * j + b;
-					Point point = new Point((int) j, (int) y);
-					ps.add(point);
-				}
-			}
-		}
-
-		return ps;
 	}
 
 	public int[] GetBoundX() {
